@@ -14,6 +14,9 @@ export default async function getPercentageOffDiscount(
   discountId,
   collections
 ) {
+
+  // console.log("in percentage discount")
+  console.log(cartId, discountId);
   const { Cart, Discounts, Accounts, AllowedDomains } = collections;
 
   const discountMethod = await Discounts.findOne({ _id: discountId });
@@ -33,42 +36,60 @@ export default async function getPercentageOffDiscount(
   let cartOwnerDetail = await Accounts.findOne({
     _id: cart.accountId,
   });
-  let AllowedDomainsResp = await AllowedDomains.findOne({});
-  let customerEmail;
-  let discountDomains;
-  discountDomains = AllowedDomainsResp?.domains;
+    let itemDiscount=discountMethod.discount;
 
-  if (cartOwnerDetail) {
-    // if (cartOwnerDetail?.emails[0]?.verified === true) {
-    customerEmail = cartOwnerDetail?.emails[0]?.address;
-    // }
-  }
+  // let AllowedDomainsResp = await AllowedDomains.findOne({});
+  // let customerEmail;
+  // let discountDomains;
+  // discountDomains = AllowedDomainsResp?.domains;
+
+  // if (cartOwnerDetail) {
+  //   // if (cartOwnerDetail?.emails[0]?.verified === true) {
+  //   customerEmail = cartOwnerDetail?.emails[0]?.address;
+  //   // }
+  // }
 
   let discount = 0;
-  let customerDomain;
-  customerDomain = customerEmail?.split("@")[1];
+  // let customerDomain;
+  // customerDomain = customerEmail?.split("@")[1];
 
-  if (discountDomains?.includes(customerDomain)) {
-    // let dealDiscount;
-    let itemDiscount;
-    if (AllowedDomainsResp) {
-      // dealDiscount = Number(AllowedDomainsResp?.DealDiscount);
-      itemDiscount = Number(AllowedDomainsResp?.ItemDiscount);
-    }
-    for (const item of cart.items) {
+
+   for (const item of cart.items) {
+    // console.log(item);
       // if (discountDomains?.includes(customerDomain)) {
       // if (item.isDeal === true) {
       //   console.log("true");
       //   discount += (item.subtotal.amount * dealDiscount) / 100;
       // } else
-       if (item.isDeal === false) {
+       if (item.isDeal !=true) {
         console.log("Not true");
-        discount += (item.subtotal.amount * itemDiscount) / 100;
+        discount += Math.floor((item.subtotal.amount * itemDiscount) / 100);
       }
       // }
     }
     return discount;
-  } else {
-    return discount;
-  }
+
+    
+  // if (discountDomains?.includes(customerDomain)) {
+  //   // let dealDiscount;
+  //   if (AllowedDomainsResp) {
+  //     // dealDiscount = Number(AllowedDomainsResp?.DealDiscount);
+  //     itemDiscount = Number(AllowedDomainsResp?.ItemDiscount);
+  //   }
+  //   for (const item of cart.items) {
+  //     // if (discountDomains?.includes(customerDomain)) {
+  //     // if (item.isDeal === true) {
+  //     //   console.log("true");
+  //     //   discount += (item.subtotal.amount * dealDiscount) / 100;
+  //     // } else
+  //      if (item.isDeal === false) {
+  //       console.log("Not true");
+  //       discount += (item.subtotal.amount * itemDiscount) / 100;
+  //     }
+  //     // }
+  //   }
+  //   return discount;
+  // } else {
+  //   return discount;
+  // }
 }

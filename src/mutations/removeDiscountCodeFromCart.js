@@ -26,31 +26,33 @@ const inputSchema = new SimpleSchema({
 export default async function removeDiscountCodeFromCart(context, input) {
   inputSchema.validate(input);
 
-  const { cartId, discountId, shopId, token } = input;
+  const { cartId, discountId, shopId, token } = input; //discountId is actually discount code
   const { collections } = context;
   const { Cart } = collections;
-
+  console.log(cartId, discountId, shopId, token);
   let cart = await getCart(context, shopId, cartId, { cartToken: token, throwIfNotFound: false });
-
-  // If we didn't find a cart, it means it belongs to another user,
+  // console.log(cartId);
+  // // If we didn't find a cart, it means it belongs to another user,
   // not the currently logged in user.
   // Check to make sure current user has admin permission.
-  if (!cart) {
-    await context.validatePermissions(`reaction:legacy:carts:${cartId}`, "update", {
-      shopId,
-      owner: cart.accountId
-    });
+  // if (!cart) {
+  //   await context.validatePermissions(`reaction:legacy:carts:${cartId}`, "update", {
+  //     shopId,
+  //     owner: cart.accountId
+  //   });
 
-    cart = await Cart.findOne({ _id: cartId, shopId });
+    // cart = await Cart.findOne({ _id: cartId, shopId });
+    console.log(cart);
+
     if (!cart) {
       throw new ReactionError("not-found", "Cart not found");
     }
-  }
+  // }
 
   // Instead of directly updating cart, we remove the discount billing
   // object from the existing cart, then pass to `saveCart`
   // to re-run cart through all transforms and validations.
-  const updatedCartBilling = cart.billing.filter((doc) => doc._id !== discountId);
+  const updatedCartBilling = cart.billing.filter((doc) => doc.data.code !== discountId);
   if (cart.billing.length === updatedCartBilling.length) {
     throw new ReactionError("not-found", "No applied discount found with that ID");
   }

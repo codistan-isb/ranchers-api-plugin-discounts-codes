@@ -31,7 +31,7 @@ export default async function applyDiscountCodeToCart(context, input) {
   const { collections, userId } = context;
   const { Cart, Discounts, Accounts } = collections;
   // console.log("input token ", token);
-
+console.log(cartId);
   let userCount = 0;
   let orderCount = 0;
   let cart = await getCart(context, shopId, cartId, {
@@ -47,14 +47,14 @@ export default async function applyDiscountCodeToCart(context, input) {
       throw new ReactionError("not-found", "Cart not found");
     }
 
-    await context.validatePermissions(
-      `reaction:legacy:carts:${cartId}`,
-      "update",
-      {
-        shopId,
-        owner: cart.accountId,
-      }
-    );
+    // await context.validatePermissions(
+    //   `reaction:legacy:carts:${cartId}`,
+    //   "update",
+    //   {
+    //     shopId,
+    //     owner: cart.accountId,
+    //   }
+    // );
   }
 
   const objectToApplyDiscount = cart;
@@ -99,6 +99,8 @@ export default async function applyDiscountCodeToCart(context, input) {
   if (!cart.billing) {
     cart.billing = [];
   }
+  if(cart.billing.length==1){    return cart; //throw new ReactionError("error-occurred", "Code already applied");
+ }
   cart.billing.push({
     _id: Random.id(),
     amount: discount.discount,
