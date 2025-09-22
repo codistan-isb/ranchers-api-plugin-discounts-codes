@@ -31,7 +31,7 @@ export default async function applyDiscountCodeToCart(context, input) {
   const { collections, userId } = context;
   const { Cart, Discounts, Accounts } = collections;
   // console.log("input token ", token);
-console.log(cartId);
+// console.log(cartId);
   let userCount = 0;
   let orderCount = 0;
   let cart = await getCart(context, shopId, cartId, {
@@ -46,6 +46,7 @@ console.log(cartId);
     if (!cart) {
       throw new ReactionError("not-found", "Cart not found");
     }
+    
 
     // await context.validatePermissions(
     //   `reaction:legacy:carts:${cartId}`,
