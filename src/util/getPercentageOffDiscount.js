@@ -63,11 +63,11 @@ export default async function getPercentageOffDiscount(
       // } else
        if (item.isDeal !=true) {
         console.log("Not true");
-        discount += Math.floor((item.subtotal.amount * itemDiscount) / 100);
+        discount += (item.subtotal.amount * itemDiscount) / 100;
       }
       // }
     }
-    return discount;
+    return Math.floor(discount);
 
     
   // if (discountDomains?.includes(customerDomain)) {
