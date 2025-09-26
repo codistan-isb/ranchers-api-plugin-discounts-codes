@@ -67,7 +67,7 @@ export default async function getPercentageOffDiscount(
       }
       // }
     }
-    return Math.floor(discount);
+    return Math.ceil(discount);
 
     
   // if (discountDomains?.includes(customerDomain)) {
