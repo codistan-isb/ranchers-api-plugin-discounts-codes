@@ -3,6 +3,8 @@ import Random from "@reactioncommerce/random";
 import ReactionError from "@reactioncommerce/reaction-error";
 import getCart from "../util/getCart.js";
 
+const DEAL_TAG_ID = "QxJefMA3viGnquk6Y";
+
 const inputSchema = new SimpleSchema({
   cartId: String,
   discountCode: String,
@@ -12,6 +14,18 @@ const inputSchema = new SimpleSchema({
     optional: true,
   },
 });
+
+/**
+ * @summary Cart item is a deal (not ala carte)
+ * @param {Object} item Cart item
+ * @returns {Boolean} True when item is a deal
+ */
+function isDealItem(item) {
+  return (
+    item?.isDeal === true ||
+    (Array.isArray(item?.productTagIds) && item.productTagIds.includes(DEAL_TAG_ID))
+  );
+}
 
 /**
  * @method applyDiscountCodeToCart
@@ -31,7 +45,7 @@ export default async function applyDiscountCodeToCart(context, input) {
   const { collections, userId } = context;
   const { Cart, Discounts, Accounts } = collections;
   // console.log("input token ", token);
-// console.log(cartId);
+console.log(cartId);
   let userCount = 0;
   let orderCount = 0;
   let cart = await getCart(context, shopId, cartId, {
@@ -56,6 +70,19 @@ export default async function applyDiscountCodeToCart(context, input) {
     //     owner: cart.accountId,
     //   }
     // );
+  }
+
+  const cartItems = cart.items || [];
+  const hasDealItems = cartItems.some((item) => isDealItem(item));
+  const hasAlaCarteItems = cartItems.some((item) => !isDealItem(item));
+
+  // Deals-only carts cannot use discount codes. Mixed carts are allowed;
+  // discount amount is calculated on ala carte items only.
+  if (hasDealItems && !hasAlaCarteItems) {
+    throw new ReactionError(
+      "invalid",
+      "Discount code can't be applied to a cart with only deals"
+    );
   }
 
   const objectToApplyDiscount = cart;
@@ -100,7 +127,9 @@ export default async function applyDiscountCodeToCart(context, input) {
   if (!cart.billing) {
     cart.billing = [];
   }
-  if(cart.billing.length==1){    return cart; //throw new ReactionError("error-occurred", "Code already applied");
+  if(cart.billing.length==1){ 
+    console.log("Code already applied ");
+    return cart; //throw new ReactionError("error-occurred", "Code already applied");
  }
   cart.billing.push({
     _id: Random.id(),

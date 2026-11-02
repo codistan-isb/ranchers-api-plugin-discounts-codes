@@ -1,5 +1,19 @@
 import ReactionError from "@reactioncommerce/reaction-error";
 
+const DEAL_TAG_ID = "QxJefMA3viGnquk6Y";
+
+/**
+ * @summary Cart item is a deal (not ala carte)
+ * @param {Object} item Cart item
+ * @returns {Boolean} True when item is a deal
+ */
+function isDealItem(item) {
+  return (
+    item?.isDeal === true ||
+    (Array.isArray(item?.productTagIds) && item.productTagIds.includes(DEAL_TAG_ID))
+  );
+}
+
 /**
  * @name discounts/codes/sale
  * @method
@@ -23,9 +37,10 @@ export default async function getItemPriceDiscount(cartId, discountId, collectio
   const cart = await Cart.findOne({ _id: cartId });
   if (!cart) throw new ReactionError("not-found", "Cart not found");
 
-  // TODO add item specific conditions to sale calculations.
+  // Apply sale pricing to ala carte items only; skip deals
   let discount = 0;
   for (const item of cart.items) {
+    if (isDealItem(item)) continue;
     const salePriceItemTotal = item.quantity * discountAmount;
     // we if the sale is below 0, we won't discount at all. that's invalid.
     discount += Math.max(0, item.subtotal.amount - salePriceItemTotal);

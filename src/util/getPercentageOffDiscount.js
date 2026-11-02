@@ -1,4 +1,19 @@
 import ReactionError from "@reactioncommerce/reaction-error";
+
+const DEAL_TAG_ID = "QxJefMA3viGnquk6Y";
+
+/**
+ * @summary Cart item is a deal (not ala carte)
+ * @param {Object} item Cart item
+ * @returns {Boolean} True when item is a deal
+ */
+function isDealItem(item) {
+  return (
+    item?.isDeal === true ||
+    (Array.isArray(item?.productTagIds) && item.productTagIds.includes(DEAL_TAG_ID))
+  );
+}
+
 /**
  * @name discounts/codes/discount
  * @method
@@ -33,9 +48,7 @@ export default async function getPercentageOffDiscount(
 
   const cart = await Cart.findOne({ _id: cartId });
   if (!cart) throw new ReactionError("not-found", "Cart not found");
-  let cartOwnerDetail = await Accounts.findOne({
-    _id: cart.accountId,
-  });
+
     let itemDiscount=discountMethod.discount;
 
   // let AllowedDomainsResp = await AllowedDomains.findOne({});
@@ -54,15 +67,15 @@ export default async function getPercentageOffDiscount(
   // customerDomain = customerEmail?.split("@")[1];
 
 
+   // Apply percentage discount to ala carte items only; skip deals
    for (const item of cart.items) {
-    // console.log(item);
+    console.log(item);
       // if (discountDomains?.includes(customerDomain)) {
       // if (item.isDeal === true) {
       //   console.log("true");
       //   discount += (item.subtotal.amount * dealDiscount) / 100;
       // } else
-       if (item.isDeal !=true) {
-        console.log("Not true");
+      if (!isDealItem(item)) {
         discount += (item.subtotal.amount * itemDiscount) / 100;
       }
       // }
