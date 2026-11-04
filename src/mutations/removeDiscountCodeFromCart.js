@@ -13,12 +13,29 @@ const inputSchema = new SimpleSchema({
 });
 
 /**
+ * @summary Whether a cart billing discount entry matches any candidate id/code
+ * @param {Object} billingDoc Cart billing entry
+ * @param {String[]} candidates Discount document id, billing id, and/or promo code
+ * @returns {Boolean} True when this billing entry should be removed
+ */
+function billingMatchesDiscount(billingDoc, candidates) {
+  if (!billingDoc || !candidates?.length) return false;
+
+  return candidates.some(
+    (id) =>
+      billingDoc._id === id ||
+      billingDoc.data?.discountId === id ||
+      billingDoc.data?.code === id
+  );
+}
+
+/**
  * @method removeDiscountCodeFromCart
- * @summary Applies a discount code to a cart
+ * @summary Removes a discount code from a cart
  * @param {Object} context - an object containing the per-request state
  * @param {Object} input - an object of all mutation arguments that were sent by the client
  * @param {Object} input.cartId - Cart to remove discount from
- * @param {Object} input.discountId - Discount code to remove from cart
+ * @param {Object} input.discountId - Discount id, billing id, or promo code to remove
  * @param {String} input.shopId - Shop cart belongs to
  * @param {String} [input.token] - Cart token, if anonymous
  * @returns {Promise<Object>} An object with the updated cart with the removed discount
@@ -26,37 +43,54 @@ const inputSchema = new SimpleSchema({
 export default async function removeDiscountCodeFromCart(context, input) {
   inputSchema.validate(input);
 
-  const { cartId, discountId, shopId, token } = input; //discountId is actually discount code
+  const { cartId, discountId, shopId, token } = input;
   const { collections } = context;
-  const { Cart } = collections;
-  console.log(cartId, discountId, shopId, token);
-  let cart = await getCart(context, shopId, cartId, { cartToken: token, throwIfNotFound: false });
-  // console.log(cartId);
-  // // If we didn't find a cart, it means it belongs to another user,
-  // not the currently logged in user.
-  // Check to make sure current user has admin permission.
-  // if (!cart) {
-  //   await context.validatePermissions(`reaction:legacy:carts:${cartId}`, "update", {
-  //     shopId,
-  //     owner: cart.accountId
-  //   });
+  const { Cart, Discounts } = collections;
 
-    // cart = await Cart.findOne({ _id: cartId, shopId });
-    console.log(cart);
+  let cart = await getCart(context, shopId, cartId, {
+    cartToken: token,
+    throwIfNotFound: false
+  });
 
+  // If we didn't find a cart via account/token selector, fall back to cart id
+  // (same approach as applyDiscountCodeToCart).
+  if (!cart) {
+    cart = await Cart.findOne({ _id: cartId });
     if (!cart) {
       throw new ReactionError("not-found", "Cart not found");
     }
-  // }
-
-  // Instead of directly updating cart, we remove the discount billing
-  // object from the existing cart, then pass to `saveCart`
-  // to re-run cart through all transforms and validations.
-  const updatedCartBilling = cart.billing.filter((doc) => doc.data.code !== discountId);
-  if (cart.billing.length === updatedCartBilling.length) {
-    throw new ReactionError("not-found", "No applied discount found with that ID");
   }
+
+  if (!Array.isArray(cart.billing) || cart.billing.length === 0) {
+    cart.billing = [];
+    cart.discount = 0;
+    return cart;
+  }
+
+  // Resolve all possible identifiers clients may send:
+  // opaque/raw discount _id, promo code, or billing entry _id
+  const matchCandidates = new Set([discountId]);
+  const discount = await Discounts.findOne({
+    $or: [{ _id: discountId }, { code: discountId }]
+  });
+  if (discount) {
+    matchCandidates.add(discount._id);
+    if (discount.code) matchCandidates.add(discount.code);
+  }
+
+  const updatedCartBilling = cart.billing.filter(
+    (doc) => !billingMatchesDiscount(doc, [...matchCandidates])
+  );
+
+  // Idempotent: if nothing matched, return cart as-is instead of erroring
+  if (cart.billing.length === updatedCartBilling.length) {
+    return cart;
+  }
+
   cart.billing = updatedCartBilling;
+  if (cart.billing.length === 0) {
+    cart.discount = 0;
+  }
 
   const savedCart = await context.mutations.saveCart(context, cart);
 

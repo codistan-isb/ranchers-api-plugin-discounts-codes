@@ -1,6 +1,21 @@
 import { decodeCartOpaqueId, decodeDiscountOpaqueId, decodeShopOpaqueId } from "../../xforms/id.js";
 
 /**
+ * @summary Decode opaque discount id when possible; otherwise keep raw value
+ * (clients may send opaque id, raw discount _id, or promo code).
+ * @param {String} value Incoming discountId
+ * @returns {String} Decoded or original value
+ */
+function resolveDiscountId(value) {
+  if (!value) return value;
+  try {
+    return decodeDiscountOpaqueId(value);
+  } catch (error) {
+    return value;
+  }
+}
+
+/**
  * @name Mutation/removeDiscountCodeFromCart
  * @method
  * @memberof Fulfillment/GraphQL
@@ -26,7 +41,7 @@ export default async function removeDiscountCodeFromCart(parentResult, { input }
 
   const updatedCartWithRemovedDiscountCode = await context.mutations.removeDiscountCodeFromCart(context, {
     cartId: decodeCartOpaqueId(cartId),
-    discountId: decodeDiscountOpaqueId(discountId),
+    discountId: resolveDiscountId(discountId),
     shopId: decodeShopOpaqueId(shopId),
     token
   });
