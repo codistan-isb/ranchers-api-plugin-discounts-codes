@@ -95,6 +95,14 @@ console.log(cartId);
     );
 
   const { conditions } = discount;
+  // Schema default is true; treat missing enabled as allowed.
+  if (conditions?.enabled === false) {
+    throw new ReactionError(
+      "invalid",
+      `Discount code ${discountCode} is disabled`
+    );
+  }
+
   let accountLimitExceeded = false;
   let discountLimitExceeded = false;
 
