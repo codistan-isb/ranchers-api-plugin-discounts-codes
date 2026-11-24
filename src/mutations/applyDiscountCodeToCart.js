@@ -147,8 +147,9 @@ console.log(cartId);
     data: {
       discountId: discount._id,
       code: discount.code,
+      name: discount.name || null,
     },
-    displayName: `Discount Code: ${discount.code}`,
+    displayName: discount.name ? `Discount: ${discount.name}` : `Discount Code: ${discount.code}`,
     method: discount.calculation.method,
     mode: "discount",
     name: "discount_code",

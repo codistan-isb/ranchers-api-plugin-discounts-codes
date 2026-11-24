@@ -30,6 +30,8 @@ export default async function discountCodes(context, shopId, filters) {
       $or: [{
         code: cond
       }, {
+        name: cond
+      }, {
         label: cond
       }, {
         description: cond

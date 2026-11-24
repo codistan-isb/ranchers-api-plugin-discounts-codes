@@ -9,6 +9,9 @@ type DiscountCode {
   "Discount Code"
   code: String!
 
+  "Name shown on the kitchen order card"
+  name: String
+
   "Discount code conditions"
   conditions: DiscountConditions
 
@@ -223,6 +226,9 @@ input DiscountCodeInput {
 
   "Discount Code"
   code: String!
+
+  "Name shown on the kitchen order card"
+  name: String
 
   "Discount code conditions"
   conditions: DiscountConditionsInput

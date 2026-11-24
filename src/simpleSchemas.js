@@ -36,6 +36,11 @@ export const DiscountCodes = new SimpleSchema({
     type: String,
     optional: true
   },
+  "name": {
+    type: String,
+    optional: true,
+    label: "Discount Name"
+  },
   "code": {
     label: "Discount Code",
     type: String
